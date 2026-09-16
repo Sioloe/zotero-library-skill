@@ -1,0 +1,975 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Zotero Library Companion",
+    "version": "1.0.0",
+    "description": "Personal Zotero metadata import/export, collections and tags. No deletion or binary file upload."
+  },
+  "servers": [
+    {
+      "url": "https://api.zotero.org"
+    }
+  ],
+  "security": [
+    {
+      "ZoteroBearer": []
+    }
+  ],
+  "paths": {
+    "/{libraryType}/{libraryID}/items/top": {
+      "get": {
+        "operationId": "listTopItems",
+        "description": "Read or export bibliographic items. Paginate; results exclude child items.",
+        "parameters": [
+          {
+            "name": "libraryType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "users",
+                "groups"
+              ]
+            }
+          },
+          {
+            "name": "libraryID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                3
+              ],
+              "default": 3
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qmode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "titleCreatorYear",
+                "everything"
+              ]
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemKey",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated item keys, at most 50."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dateAdded",
+                "dateModified",
+                "title",
+                "creator",
+                "date"
+              ],
+              "default": "title"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "bibtex",
+                "biblatex",
+                "ris",
+                "csljson",
+                "csv"
+              ],
+              "default": "json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zotero response; inspect individual write failures when present.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemEnvelope"
+                  }
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials."
+          },
+          "403": {
+            "description": "Insufficient library permission."
+          },
+          "412": {
+            "description": "Version conflict. Fetch current data before deciding how to continue."
+          },
+          "429": {
+            "description": "Rate limited. Respect the retry delay."
+          }
+        }
+      }
+    },
+    "/{libraryType}/{libraryID}/collections": {
+      "get": {
+        "operationId": "listCollections",
+        "description": "Read library collections and their parents. Paginate all results.",
+        "parameters": [
+          {
+            "name": "libraryType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "users",
+                "groups"
+              ]
+            }
+          },
+          {
+            "name": "libraryID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                3
+              ],
+              "default": 3
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zotero response; inspect individual write failures when present.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollectionEnvelope"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials."
+          },
+          "403": {
+            "description": "Insufficient library permission."
+          },
+          "412": {
+            "description": "Version conflict. Fetch current data before deciding how to continue."
+          },
+          "429": {
+            "description": "Rate limited. Respect the retry delay."
+          }
+        }
+      },
+      "post": {
+        "operationId": "createCollections",
+        "description": "Create collections only after checking parent/name duplicates. Use a fresh key and version=0; parent must exist. Check failed results.",
+        "parameters": [
+          {
+            "name": "libraryType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "users",
+                "groups"
+              ]
+            }
+          },
+          {
+            "name": "libraryID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                3
+              ],
+              "default": 3
+            }
+          }
+        ],
+        "x-openai-isConsequential": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 50,
+                "items": {
+                  "$ref": "#/components/schemas/CollectionData"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zotero response; inspect individual write failures when present.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials."
+          },
+          "403": {
+            "description": "Insufficient library permission."
+          },
+          "412": {
+            "description": "Version conflict. Fetch current data before deciding how to continue."
+          },
+          "429": {
+            "description": "Rate limited. Respect the retry delay."
+          }
+        }
+      }
+    },
+    "/{libraryType}/{libraryID}/collections/{collectionKey}/items/top": {
+      "get": {
+        "operationId": "listCollectionItems",
+        "description": "Read/export direct items in a collection. Subcollections require separate requests.",
+        "parameters": [
+          {
+            "name": "libraryType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "users",
+                "groups"
+              ]
+            }
+          },
+          {
+            "name": "libraryID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            }
+          },
+          {
+            "name": "collectionKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                3
+              ],
+              "default": 3
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qmode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "titleCreatorYear",
+                "everything"
+              ]
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemKey",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated item keys, at most 50."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dateAdded",
+                "dateModified",
+                "title",
+                "creator",
+                "date"
+              ],
+              "default": "title"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "bibtex",
+                "biblatex",
+                "ris",
+                "csljson",
+                "csv"
+              ],
+              "default": "json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zotero response; inspect individual write failures when present.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemEnvelope"
+                  }
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials."
+          },
+          "403": {
+            "description": "Insufficient library permission."
+          },
+          "412": {
+            "description": "Version conflict. Fetch current data before deciding how to continue."
+          },
+          "429": {
+            "description": "Rate limited. Respect the retry delay."
+          }
+        }
+      }
+    },
+    "/{libraryType}/{libraryID}/items/{itemKey}": {
+      "get": {
+        "operationId": "getItem",
+        "description": "Read current complete item data and version before editing or verifying a write.",
+        "parameters": [
+          {
+            "name": "libraryType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "users",
+                "groups"
+              ]
+            }
+          },
+          {
+            "name": "libraryID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            }
+          },
+          {
+            "name": "itemKey",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                3
+              ],
+              "default": 3
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zotero response; inspect individual write failures when present.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials."
+          },
+          "403": {
+            "description": "Insufficient library permission."
+          },
+          "412": {
+            "description": "Version conflict. Fetch current data before deciding how to continue."
+          },
+          "429": {
+            "description": "Rate limited. Respect the retry delay."
+          }
+        }
+      }
+    },
+    "/items/new": {
+      "get": {
+        "operationId": "getItemTemplate",
+        "description": "Get an editable Zotero item template before importing metadata.",
+        "parameters": [
+          {
+            "name": "itemType",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                3
+              ],
+              "default": 3
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Zotero response; inspect individual write failures when present.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemData"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials."
+          },
+          "403": {
+            "description": "Insufficient library permission."
+          },
+          "412": {
+            "description": "Version conflict. Fetch current data before deciding how to continue."
+          },
+          "429": {
+            "description": "Rate limited. Respect the retry delay."
+          }
+        },
+        "security": []
+      }
+    },
+    "/{libraryType}/{libraryID}/items": {
+      "post": {
+        "operationId": "upsertItems",
+        "description": "Create or update up to 50 items. Updates require current key/version. Tags and collections replace whole arrays; merge existing values first. Check failed results.",
+        "parameters": [
+          {
+            "name": "libraryType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "users",
+                "groups"
+              ]
+            }
+          },
+          {
+            "name": "libraryID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            }
+          },
+          {
+            "name": "v",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [
+                3
+              ],
+              "default": 3
+            }
+          }
+        ],
+        "x-openai-isConsequential": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 50,
+                "items": {
+                  "$ref": "#/components/schemas/ItemData"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zotero response; inspect individual write failures when present.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials."
+          },
+          "403": {
+            "description": "Insufficient library permission."
+          },
+          "412": {
+            "description": "Version conflict. Fetch current data before deciding how to continue."
+          },
+          "429": {
+            "description": "Rate limited. Respect the retry delay."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ZoteroBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "ItemData": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Current item version for updates; 0 with a new key for creation."
+          },
+          "itemType": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "creators": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "creatorType": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "firstName": {
+                  "type": "string"
+                },
+                "lastName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "creatorType"
+              ]
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tag": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                }
+              },
+              "required": [
+                "tag"
+              ]
+            }
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$"
+            }
+          },
+          "relations": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": true
+          },
+          "abstractNote": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "DOI": {
+            "type": "string"
+          },
+          "ISBN": {
+            "type": "string"
+          },
+          "ISSN": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "publicationTitle": {
+            "type": "string"
+          },
+          "volume": {
+            "type": "string"
+          },
+          "issue": {
+            "type": "string"
+          },
+          "pages": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          },
+          "place": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "extra": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "ItemEnvelope": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ItemData"
+          }
+        },
+        "additionalProperties": true
+      },
+      "CollectionData": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parentCollection": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$"
+              },
+              {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "CollectionEnvelope": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[23456789ABCDEFGHIJKLMNPQRSTUVWXYZ]{8}$"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CollectionData"
+          }
+        },
+        "additionalProperties": true
+      },
+      "WriteResult": {
+        "type": "object",
+        "properties": {
+          "successful": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": true
+          },
+          "unchanged": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "failed": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": true
+          }
+        }
+      }
+    }
+  }
+}

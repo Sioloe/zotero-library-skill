@@ -1,0 +1,6 @@
+interface:
+  display_name: "Zotero 文献管家"
+  short_description: "导入导出 Zotero 文献，按内容整理分类、标签与阅读优先级"
+  default_prompt: "使用 $zotero-library 检查我的 Zotero 文献分类和标签，生成整理计划及推荐阅读顺序。"
+policy:
+  allow_implicit_invocation: true
