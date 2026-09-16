@@ -11,6 +11,7 @@ description: 管理 Zotero 文献库：通过 Zotero API 导入文献元数据�
 
 - 在 Codex 中使用本技能的 `scripts/zotero_library.py`，建议 Python 3.11+，只需标准库。命令细节见 [命令与计划格式](references/commands.md)。首次配置见 [连接设置](references/connection.md)。检查连接用 `status`，列出全部分类用 `collections`；状态只报告密钥权限，不执行测试写入。
 - 在有 GPT Actions 的 ChatGPT 中使用 `assets/chatgpt-actions.json` 和 [GPT 指令](references/chatgpt-instructions.md)。没有执行工具的普通聊天只能分析用户提供的导出文件，不能声称已修改 Zotero。
+- 手机及界面配置按 [连接设置](references/connection.md) 区分 Actions 云端调用与 Remote 远程运行；后者要求电脑在线。依据实际编辑、操作和保存入口确认能力，不仅凭“技能”页面标题或套餐断言可用性。上传技能不会自动迁移 Windows 加密凭据，当前脚本和 Actions 均未实现自动获取 PDF 全文。
 - 已连接的 Zotero 工具也可使用，但先核实它是否支持写入。Web API 使用云端版本号；本地 API 的数据不能直接作为云端写入基线。本脚本只写 Web API，不依赖桌面版本的本地写入能力。
 - 先确定个人库或群组库以及目标分类；用户指定了范围就不要扩大。分类选择仅覆盖该分类的直接条目，子分类须另行读取。整理全库时读取全部分页，排除附件、批注、笔记和回收站条目。
 - 读写密钥从环境变量或本机加密配置获取。不要要求用户把密钥发到聊天，也不要把密钥写进技能、计划、日志或分享文件。

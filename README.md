@@ -28,6 +28,8 @@
 
 **把技能文字粘贴到普通聊天，并不会自动获得 Zotero 访问能力。**
 
+手机使用见下文 [在手机上使用](#在手机上使用)。希望电脑关机后仍能通过对话调用 Zotero 时，可在账号支持的前提下配置 [GPT Actions](#chatgpt--gpt-actions)；已有电脑配置也可通过 Remote 远程使用。
+
 ## Codex 快速开始（Windows）
 
 ### 1. 下载与安装技能
@@ -160,20 +162,118 @@ python .\zotero-library\scripts\zotero_library.py apply --plan outputs/organize-
 
 ## ChatGPT + GPT Actions
 
-当账号提供自定义 GPT 与 Actions 时：
+这条路径使用项目自带的 OpenAPI 定义直接访问 `api.zotero.org`，无需自建服务器或让电脑保持开机。前提是当前账号或工作区能配置、保存并使用带 Actions 的 GPT。
 
-1. 创建仅自己使用的 GPT。
-2. 将 [chatgpt-instructions.md](zotero-library/references/chatgpt-instructions.md) 放入 Instructions。
-3. 添加 Action，粘贴 [chatgpt-actions.json](zotero-library/assets/chatgpt-actions.json)。
-4. Authentication 选择 **API Key → Bearer**，在认证设置中输入 Zotero 专用密钥。
-5. Instructions 中写明 `libraryType=users` 与自己的 `libraryID`；群组用 `groups`。这里是复数，与 Python 配置的 `user/group` 不同。
-6. 先测试“列出分类”，再按授权测试小范围写入。需要下载文件时开启可用的文件生成功能。
+### 1. 根据实际界面确认入口
 
-Actions 直接请求 Zotero 云端，无需自建服务器。没有 Actions 或受工作区限制的账号，可先分析导出文件，再交给 Codex 执行。
+在电脑浏览器打开 [GPT 页面](https://chatgpt.com/gpts)，登录手机上使用的同一账号及工作区。页面名称、按钮和功能开放情况可能变化，按实际入口判断：
 
-**不要公开共享保存了个人 Zotero 密钥的 GPT。** 其使用者可能通过它访问同一文献库。分享本项目时，让每个人配置自己的密钥。Actions 可能要求额外确认写入，按平台提示操作。参见 [GPT Actions 认证](https://developers.openai.com/api/docs/actions/authentication)。
+| 当前看到的界面 | 下一步与判断 |
+| --- | --- |
+| “技能”，加号中有“通过聊天创建”“通过编辑器创建”“从电脑上传” | 只能确认存在创建或上传入口；可进入编辑器继续检查，不能仅凭“技能”标题判断有无 Actions |
+| “新 GPT”“草稿”，上方有“创建”和“配置” | 已进入 GPT 草稿编辑器，点击“配置”；此时尚不能证明能够保存或连接 Zotero |
+| “我的 GPT / My GPTs”中已有 GPT | 打开自己的 GPT，查看是否可以“编辑 GPT / Edit GPT” |
+| “配置”页下方有“操作 → 创建新操作” | 已找到 Actions 配置入口，可按下文继续 |
+| 没有操作入口、无法编辑或保存被拒绝 | 当前页面、账号或工作区尚不能完成这条路径；检查权限和平台通知，或使用下文的其他方式 |
+
+**不要只根据套餐名称或入口页面标题断言可用或不可用。** 当前界面能进入配置、能保存，以及真实接口调用成功，需要分别确认。平台说明和账号政策变化时，以当前官方说明与实际限制共同判断。
+
+### 2. 填写 GPT 基本配置
+
+点击顶部 **配置 / Configure**，按下表填写：
+
+| 字段 | 填写内容 |
+| --- | --- |
+| 名称 | `Zotero 文献管家` |
+| 描述 | `查询和整理 Zotero 文献，导入导出元数据，管理分类、标签和阅读顺序。` |
+| 指令 / Instructions | 粘贴 [chatgpt-instructions.md](zotero-library/references/chatgpt-instructions.md) 的全部内容，再补充下方库配置 |
+| 对话开场白 | `检查 Zotero 连接，列出我的分类，不修改任何文献。` |
+| 网页搜索 | 需要核实 DOI、论文链接等外部信息时启用 |
+| 代码解释器和数据分析 | 需要合并导出结果并生成下载文件时启用 |
+
+在“指令”末尾追加以下内容，并将占位符替换为自己的数字 ID：
+
+```text
+默认使用我的 Zotero 个人库。
+libraryType=users
+libraryID=<替换为自己的数字 User ID>
+```
+
+群组库改为 `libraryType=groups`，并把 `libraryID` 换成该群组的数字 Group ID。**Actions 使用复数 `users/groups`，Python 本机配置使用单数 `user/group`。** 不要把示例或占位符当成真实 ID。
+
+“知识 → 上传文件”用于提供资料；API 的 Schema 应粘贴在下面的“创建新操作”中。上传 Skill ZIP、Python 文件或 OpenAPI JSON 本身，不会自动建立已认证的 Zotero 连接。
+
+### 3. 创建操作并设置认证
+
+1. 向下滚动到 **操作 / Actions**，点击 **创建新操作 / Create new action**。
+2. 打开 [chatgpt-actions.json](zotero-library/assets/chatgpt-actions.json)，在 GitHub 上用 **Raw** 查看原始文件，或打开下载后的本地文件。将全部 JSON 粘贴进 **Schema / 架构**，不要复制 GitHub 网页的其他文字。
+3. 等待架构解析。应出现 `listCollections`、`listTopItems`、`getItem` 等操作；报错时先确认复制完整且 JSON 有效。
+4. 打开 **身份验证 / Authentication**，类型选择 **API Key**，认证方式选择 **Bearer**。
+5. 在密钥字段输入完整 Zotero API Key 并保存认证设置。只输入密钥本身，不手动添加 `Bearer ` 前缀。
+
+密钥保存在 GPT 的认证设置中，不填入“指令”“知识”“Schema”或聊天消息。个人库读取需要 **Allow library access**；实际导入、创建分类或添加标签还需 **Allow write access**。群组授权单独配置，见前文的 API Key 设置。
+
+流程依据：[GPT Actions 入门与测试](https://developers.openai.com/api/docs/actions/getting-started)、[认证设置](https://developers.openai.com/api/docs/actions/authentication)。
+
+### 4. 先做只读连接测试
+
+在右侧“预览”中发送：
+
+> 检查 Zotero 连接，确认当前库类型与 ID，列出我的分类，不修改任何文献。
+
+再验证文献读取：
+
+> 列出我的文献库中最多 5 篇文献的标题和 key，不修改任何内容。
+
+应能看到实际调用 Zotero 操作及其返回结果，且内容与目标库相符。仅在回答中写“连接成功”、没有实际工具调用，不算通过。空库可能合法返回空数组，应结合接口是否成功和库 ID 判断。
+
+操作列表中的 **Test / 测试** 也可用于检查 `listCollections` 或 `listTopItems`。连接检查只测试读取操作；`upsertItems`、`createCollections` 会写入数据，留到有具体内容且用户授权时再调用。
+
+401 / 403 时核对认证、库 ID 和密钥权限；分类为空时先确认没有误选新建的群组。手机端和电脑本机配置是不同连接，修改本机 `setup.ps1` 配置不会自动更新 GPT 中的认证。
+
+### 5. 保存为仅自己并在手机使用
+
+完成只读测试后，点击当前界面提供的 **创建 / 保存 / 更新**，访问范围选择 **仅自己 / Only me**。再用手机 ChatGPT 登录同一账号及工作区，打开已保存的 GPT 或它的链接，重复“列出分类”测试。
+
+手机支持使用 GPT，创建和编辑需通过网页版；功能仍受账号及工作区权限约束，参见 [GPT 官方使用与编辑说明](https://help.openai.com/en/articles/8554397-creating-a-gpt)。没有成功保存的草稿，不代表已经可以在手机使用。
+
+**不要公开共享保存了个人 Zotero 密钥的 GPT。** 其他使用者可能通过它访问同一文献库。每个人应配置自己的密钥。写入若触发 Actions 平台确认，按提示操作。
+
+## 在手机上使用
+
+| 需求 | 方式 | 是否需要电脑一直运行 |
+| --- | --- | --- |
+| 查看文献、阅读已同步的 PDF | Zotero 官方 iOS / Android App | 不需要；文献和附件须已同步 |
+| 用手机 ChatGPT 查询文献、管理分类与标签 | 上文配置并测试通过的 GPT Actions | 不需要；直接访问 Zotero 云端 |
+| 沿用电脑上的 Codex 技能、加密配置和工作文件 | ChatGPT 手机端 Remote / 远程 | 需要；电脑须在线、保持唤醒且应用运行 |
+| 用普通聊天分析论文 | 从 Zotero 提供导出文件或 PDF 给 ChatGPT | 分析已提供的文件无需电脑持续在线；不会因此自动写回 Zotero |
+
+Zotero 官方提供 iOS 和 Android App，手机浏览器也能访问文献库，见 [Zotero 手机端说明](https://www.zotero.org/support/mobile)。文献元数据同步与附件同步是两回事：能看到标题不代表 PDF 已上传；阅读 PDF 需开启相应文件同步，见 [Zotero 同步说明](https://www.zotero.org/support/sync)。
+
+当前项目读取标题、摘要、分类、标签等元数据，**没有实现从 Zotero 自动获取 PDF 全文供模型阅读**。需要全文分析时，提供实际 PDF 或接入经过验证的附件读取工具；不能把“基于摘要分析”描述成“已阅读全文”。
+
+### Remote：手机沿用电脑上的技能
+
+电脑上已经配置了本技能且应用提供 Remote 时：
+
+1. 更新桌面与手机应用，并登录同一账号及工作区。
+2. 在电脑端应用打开 **设置 → Connections / 连接 → Control this Mac or PC / 控制此电脑**，按提示开始设置并完成验证。
+3. 用手机扫描电脑显示的配对二维码，完成连接。
+4. 手机 ChatGPT 打开 **Remote / 远程**，选择这台电脑及相应任务，发送“使用 Zotero 文献管家，检查连接并列出我的分类”。
+
+此时实际操作在电脑上执行，沿用电脑的文件、凭据及权限。电脑休眠、断网或关闭应用后，远程操作会停止。Remote 的入口和开放情况可能不同；工作区可能还需管理员允许。参见 [OpenAI 远程连接说明](https://learn.chatgpt.com/docs/remote-connections)。
+
+电脑无需常开的 Actions 路径与依赖电脑的 Remote 路径可按需要选择。若 Actions 不可用，又希望电脑关机后仍能自动调用库，则需要另行接入可用的云端工具或连接服务；本项目尚未提供独立部署的云端 MCP 服务。
 
 ## 常见问题
+
+### 页面写“技能”，是否说明不能配置 GPT Actions？
+
+不能仅凭这个标题判断。进入编辑器后，检查是否出现“新 GPT → 配置 → 操作 → 创建新操作”；有入口再验证能否保存、认证和实际调用。上文提供逐步说明。不要把“看到了创建入口”“保存成功”和“Zotero 连接成功”混为一谈。
+
+### 能直接把 GitHub 的 ZIP 上传到手机 ChatGPT 使用吗？
+
+技能包提供规则与资源，不能自动把本机 Windows 加密配置搬到云端。Actions 路径要在 GPT 的认证设置中单独配置；Remote 路径使用电脑上的已有配置。普通上传或粘贴指令不等于取得 API 调用能力。
 
 ### Group ID 在哪里？我应该用个人库还是群组库？
 
